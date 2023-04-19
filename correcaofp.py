@@ -1,50 +1,85 @@
 import math
 import tkinter as tk
 
-def capacitancia_correcao_fator_potencia():
-    tensao = float(entry_tensao.get())
-    corrent = float(entry_corrent.get())
-    frequencia = float(entry_frequencia.get())
-    fator_potencia_corrigido = float(entry_fator_potencia_corrigido.get())
-    potencia_real = tensao * corrent
-    potencia_aparente = potencia_real / fator_potencia_corrigido
-    potencia_reativa = math.sqrt(potencia_aparente ** 2 - potencia_real ** 2)
-    q_corrigido = potencia_reativa
-    q = q_corrigido + (potencia_aparente * math.sin(math.acos(fator_potencia_corrigido)))
-    c = (1000000 * q) / (2 * math.pi * frequencia * tensao ** 2)
-    label_resultado.config(text=f"Capacitância necessária: {c:.2f} uF")
+class Application(tk.Frame):
+    def __init__(self, master=None):
+        super().__init__(master)
+        self.master = master
+        self.pack()
+        self.create_widgets()
 
-janela = tk.Tk()
-janela.title("Cálculo de Capacitor")
+    def create_widgets(self):
+        # Potência Ativa
+        self.potencia_ativa_label = tk.Label(self)
+        self.potencia_ativa_label["text"] = "Potência Ativa (kW):"
+        self.potencia_ativa_label.pack(side="top")
 
-label_tensao = tk.Label(janela, text="Tensão de trabalho (V):")
-label_tensao.pack()
+        self.potencia_ativa_entry = tk.Entry(self)
+        self.potencia_ativa_entry.pack(side="top")
 
-entry_tensao = tk.Entry(janela)
-entry_tensao.pack()
+        # Tensão
+        self.tensao_label = tk.Label(self)
+        self.tensao_label["text"] = "Tensão (V):"
+        self.tensao_label.pack(side="top")
 
-label_corrent = tk.Label(janela, text="Potencia (A):")
-label_corrent.pack()
+        self.tensao_entry = tk.Entry(self)
+        self.tensao_entry.pack(side="top")
 
-entry_corrent = tk.Entry(janela)
-entry_corrent.pack()
+        # Corrente
+        self.corrente_label = tk.Label(self)
+        self.corrente_label["text"] = "Corrente (A):"
+        self.corrente_label.pack(side="top")
 
-label_frequencia = tk.Label(janela, text="Frequência (Hz):")
-label_frequencia.pack()
+        self.corrente_entry = tk.Entry(self)
+        self.corrente_entry.pack(side="top")
 
-entry_frequencia = tk.Entry(janela)
-entry_frequencia.pack()
+        # Frequência
+        self.frequencia_label = tk.Label(self)
+        self.frequencia_label["text"] = "Frequência (Hz):"
+        self.frequencia_label.pack(side="top")
 
-label_fator_potencia_corrigido = tk.Label(janela, text="Fator potencia desejado (fP):")
-label_fator_potencia_corrigido.pack()
+        self.frequencia_entry = tk.Entry(self)
+        self.frequencia_entry.pack(side="top")
 
-entry_fator_potencia_corrigido = tk.Entry(janela)
-entry_fator_potencia_corrigido.pack()
+        # Botão Calcular
+        self.calcular_button = tk.Button(self)
+        self.calcular_button["text"] = "Calcular"
+        self.calcular_button["command"] = self.calcular_fator_de_potencia
+        self.calcular_button.pack(side="top")
 
-botao_calcular = tk.Button(janela, text="Calcular", command=capacitancia_correcao_fator_potencia)
-botao_calcular.pack()
+    def calcular_fator_de_potencia(self):
+        potencia_ativa = float(self.potencia_ativa_entry.get())
+        tensao = float(self.tensao_entry.get())
+        corrente = float(self.corrente_entry.get())
+        frequencia = float(self.frequencia_entry.get())
 
-label_resultado = tk.Label(janela)
-label_resultado.pack()
+        pf = abs(math.cos(math.atan(potencia_ativa / (tensao * corrente))))
+        
+        s = abs(tensao * corrente) / 1000
+        
+        q = math.sqrt(abs(s ** 2 - potencia_ativa ** 2))
+        
+        qc = q - potencia_reativa(0.95 * potencia_ativa, s)
+        
+        c = abs((1000000000 * qc) / (2 * math.pi * frequencia * tensao ** 2))
 
-janela.mainloop()
+        resultado_texto = "Fator de Potência: {:.3f}\n".format(pf)
+        
+        resultado_texto += "Potência Aparente: {:.3f} kVA\n".format(s)
+        
+        resultado_texto += "Potência Reativa: {:.3f} kVAR\n".format(q)
+        
+        resultado_texto += "Capacitância do Capacitor: {:.3f} uF".format(c)
+
+        resultado_window = tk.Toplevel(self.master)
+
+        resultado_label = tk.Label(resultado_window, text=resultado_texto)
+        
+        resultado_label.pack()
+
+def potencia_reativa(potencia_ativa, s):
+    return math.sqrt(abs(s ** 2 - potencia_ativa ** 2))
+
+root = tk.Tk()
+app = Application(master=root)
+app.mainloop()
